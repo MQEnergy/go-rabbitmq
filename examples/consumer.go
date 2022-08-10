@@ -2,26 +2,28 @@ package main
 
 import (
 	"fmt"
-	go_rabbitmq "github.com/MQEnergy/go-rabbitmq"
+	gorabbitmq "github.com/MQEnergy/go-rabbitmq"
 	"sync"
 	"time"
 )
 
 func main() {
-	config := &go_rabbitmq.Config{
-		User:     "root",
-		Password: "",
-		Host:     "",
+	config := &gorabbitmq.Config{
+		User:     "guest",
+		Password: "guest",
+		Host:     "127.0.0.1",
 		Port:     "5672",
 		Vhost:    "",
 	}
-	mq := go_rabbitmq.New(config, "test", "", "", 0, 1)
+	// 注意 队列是否持久化.false:队列在内存中,服务器挂掉后,队列就没了;true:服务器重启后,队列将会重新生成.注意:只是队列持久化,不代表队列中的消息持久化!!!!
+	// 已存在的队列 查看 Features参数是否为持久化（D），不存在的队列按需设置是否持久化
+	mq := gorabbitmq.New(config, "test", "", "", 0, 10, false)
 	time.Sleep(time.Second * 1)
 	amqphandler(mq, 3)
 }
 
 // amqphandler 消息队列处理
-func amqphandler(mq *go_rabbitmq.RabbitMQ, consumerNum int) error {
+func amqphandler(mq *gorabbitmq.RabbitMQ, consumerNum int) error {
 	var wg sync.WaitGroup
 	cherrors := make(chan error)
 	wg.Add(consumerNum)

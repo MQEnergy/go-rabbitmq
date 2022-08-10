@@ -22,7 +22,8 @@ type (
 		Type            string // 交换机连接方式 direct topic fanout headers 可为空
 		Done            chan bool
 		isReady         bool
-		PrefetchCount   int // 消费者消费数据限流数
+		PrefetchCount   int  // 消费者消费数据限流数
+		Durable         bool // 是否queue队列持久化
 	}
 
 	// Config amqp配置
@@ -53,10 +54,11 @@ var (
 	errNotConnected  = errors.New("not connected to a server")
 	errAlreadyClosed = errors.New("already closed: not connected to the server")
 	errShutdown      = errors.New("session is shutting down")
+	errFailedToPush  = errors.New("failed to push: not connected")
 )
 
 // New 创建一个新的消费者状态实例，并自动尝试连接到服务器
-func New(config *Config, queueName, exchange, routeKey string, exchangeType, prefetchCount int) *RabbitMQ {
+func New(config *Config, queueName, exchange, routeKey string, exchangeType, prefetchCount int, durable bool) *RabbitMQ {
 	// amqp 出现url.Parse导致的错误 是因为特殊字符需要进行urlencode编码
 	password := url.QueryEscape(config.Password)
 	// amqp://账号:密码@rabbitmq服务器地址:端口号/vhost
@@ -85,6 +87,7 @@ func New(config *Config, queueName, exchange, routeKey string, exchangeType, pre
 		Addr:          addr,
 		Done:          make(chan bool),
 		PrefetchCount: prefetchCount,
+		Durable:       durable,
 	}
 	go rabbitmq.handleReconnect(rabbitmq.Addr)
 	return rabbitmq
@@ -159,8 +162,8 @@ func (m *RabbitMQ) init(conn *amqp.Connection) error {
 	}
 	_, err = ch.QueueDeclare(
 		m.QueueName,
-		// 是否持久化
-		false,
+		// 是否持久化 队列是否持久化.false:队列在内存中,服务器挂掉后,队列就没了;true:服务器重启后,队列将会重新生成.注意:只是队列持久化,不代表队列中的消息持久化!!!!
+		m.Durable,
 		// 是否为自动删除
 		false,
 		// 是否具有排他性
@@ -222,7 +225,7 @@ func (m *RabbitMQ) changeChannel(ch *amqp.Channel) {
 // 直到服务器发送确认信息。错误是只在推送操作本身失败时返回，参见UnsafePush。
 func (m *RabbitMQ) Push(data []byte) error {
 	if m.isReady == false {
-		return errors.New("failed to push push: not connected")
+		return errFailedToPush
 	}
 	for {
 		if err := m.UnsafePush(data); err != nil {
