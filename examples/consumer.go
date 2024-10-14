@@ -4,21 +4,22 @@ import (
 	"fmt"
 	gorabbitmq "github.com/MQEnergy/go-rabbitmq"
 	"sync"
-	"time"
 )
 
 func main() {
 	config := &gorabbitmq.Config{
-		User:     "guest",
-		Password: "guest",
-		Host:     "127.0.0.1",
+		Host:     "47.101.134.204",
 		Port:     "5672",
+		User:     "root",
+		Password: "q8Xb6kC52zKL",
 		Vhost:    "",
 	}
 	// 注意 队列是否持久化.false:队列在内存中,服务器挂掉后,队列就没了;true:服务器重启后,队列将会重新生成.注意:只是队列持久化,不代表队列中的消息持久化!!!!
 	// 已存在的队列 查看 Features参数是否为持久化（D），不存在的队列按需设置是否持久化
-	mq := gorabbitmq.New(config, "test", "", "", 0, 10, false)
-	time.Sleep(time.Second * 1)
+	mq, err := gorabbitmq.New(config, "oms_1", "oms", "oms.1", 0, 1, true)
+	if err != nil {
+		panic("err" + err.Error())
+	}
 	amqphandler(mq, 3)
 }
 
