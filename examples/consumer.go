@@ -8,10 +8,10 @@ import (
 
 func main() {
 	config := &gorabbitmq.Config{
-		Host:     "47.101.134.204",
+		Host:     "",
 		Port:     "5672",
 		User:     "root",
-		Password: "q8Xb6kC52zKL",
+		Password: "",
 		Vhost:    "",
 	}
 	// 注意 队列是否持久化.false:队列在内存中,服务器挂掉后,队列就没了;true:服务器重启后,队列将会重新生成.注意:只是队列持久化,不代表队列中的消息持久化!!!!
