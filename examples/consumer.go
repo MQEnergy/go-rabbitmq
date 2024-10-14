@@ -4,7 +4,6 @@ import (
 	"fmt"
 	gorabbitmq "github.com/MQEnergy/go-rabbitmq"
 	"sync"
-	"time"
 )
 
 func main() {
@@ -21,7 +20,6 @@ func main() {
 	if err != nil {
 		panic("err" + err.Error())
 	}
-	time.Sleep(1 * time.Second)
 	amqphandler(mq, 3)
 }
 

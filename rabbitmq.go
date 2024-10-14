@@ -91,6 +91,9 @@ func New(config *Config, queueName, exchange, routeKey string, exchangeType, pre
 		Durable:       durable,
 	}
 	rabbitmq.conn, err = rabbitmq.connect(addr)
+	if err != nil {
+		return nil, err
+	}
 	if err := rabbitmq.init(rabbitmq.conn); err != nil {
 		return nil, err
 	}
@@ -277,9 +280,6 @@ func (m *RabbitMQ) UnsafePush(data []byte) error {
 // 需要调用delivery.Ack 当它已经成功处理，或当它失败时，调用 delivery.Nack。
 // 忽略这个参数会导致数据在服务器上堆积。
 func (m *RabbitMQ) Consume() (<-chan amqp.Delivery, error) {
-	if m.isReady == false {
-		return nil, errNotConnected
-	}
 	// Set our quality of service.  Since we're sharing 3 consumers on the same
 	// channel, we want at least 3 messages in flight.
 	if err := m.channel.Qos(m.PrefetchCount, 0, false); err != nil {
