@@ -3,7 +3,7 @@ package go_rabbitmq
 import (
 	"errors"
 	"fmt"
-	"github.com/streadway/amqp"
+	amqp "github.com/rabbitmq/amqp091-go"
 	"net/url"
 	"time"
 )
@@ -55,10 +55,11 @@ var (
 	errAlreadyClosed = errors.New("already closed: not connected to the server")
 	errShutdown      = errors.New("session is shutting down")
 	errFailedToPush  = errors.New("failed to push: not connected")
+	err              error
 )
 
 // New 创建一个新的消费者状态实例，并自动尝试连接到服务器
-func New(config *Config, queueName, exchange, routeKey string, exchangeType, prefetchCount int, durable bool) *RabbitMQ {
+func New(config *Config, queueName, exchange, routeKey string, exchangeType, prefetchCount int, durable bool) (*RabbitMQ, error) {
 	// amqp 出现url.Parse导致的错误 是因为特殊字符需要进行urlencode编码
 	password := url.QueryEscape(config.Password)
 	// amqp://账号:密码@rabbitmq服务器地址:端口号/vhost
@@ -89,8 +90,12 @@ func New(config *Config, queueName, exchange, routeKey string, exchangeType, pre
 		PrefetchCount: prefetchCount,
 		Durable:       durable,
 	}
+	rabbitmq.conn, err = rabbitmq.connect(addr)
+	if err := rabbitmq.init(rabbitmq.conn); err != nil {
+		return nil, err
+	}
 	go rabbitmq.handleReconnect(rabbitmq.Addr)
-	return rabbitmq
+	return rabbitmq, nil
 }
 
 // handleReconnect 将在notifyConnClose上等待连接错误，然后不断尝试重新连接。
