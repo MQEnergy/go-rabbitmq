@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
-	gorabbitmq "github.com/MQEnergy/go-rabbitmq"
 	"time"
+
+	gorabbitmq "github.com/MQEnergy/go-rabbitmq"
 )
 
 func main() {
